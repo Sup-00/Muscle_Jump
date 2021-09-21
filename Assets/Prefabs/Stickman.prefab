@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4821856820099057123}
   - component: {fileID: 4821856820091578927}
   m_Layer: 0
-  m_Name: Charector
+  m_Name: Stickman
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
