@@ -1,65 +1,88 @@
 using System;
 using UnityEngine;
 using DG.Tweening;
+using UnityEngine.Events;
 
 public class CharectorMoving : MonoBehaviour
 {
     [SerializeField] private float _moveSpeed;
+    [SerializeField] private GameObject _target;
+    [SerializeField] private UnityEvent _run;
+    [SerializeField] private UnityEvent _idle;
+    [SerializeField] private UnityEvent _jump;
+    [SerializeField] private UnityEvent _grounded;
 
     private bool _onJumpTrigger = false;
+    private float _lastFrameTargetPosition;
+    private bool _isGrounded = true;
 
     private void Update()
     {
+        if (Input.GetMouseButtonDown(0))
+        {
+            _run?.Invoke();
+            _lastFrameTargetPosition = Input.mousePosition.x;
+        }
+
         if (Input.GetMouseButton(0))
         {
-            MoveForward();
+            MoveTargetPoint(_lastFrameTargetPosition);
+            transform.position = Vector3.MoveTowards(transform.position, _target.transform.position,
+                _moveSpeed * Time.deltaTime);
+            _lastFrameTargetPosition = Input.mousePosition.x;
         }
-        else if (_onJumpTrigger)
+
+        if (_onJumpTrigger && _isGrounded)
         {
             Jump();
         }
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            _idle?.Invoke();
+            _lastFrameTargetPosition = 0f;
+        }
     }
 
-    private void MoveForward()
+    private void MoveTargetPoint(float lastPosition)
     {
-        transform.position += Vector3.forward * _moveSpeed * Time.deltaTime;
+        float targetPosition = Input.mousePosition.x - lastPosition;
+        Vector3 direction = new Vector3(targetPosition, 0, 1);
 
-        Vector3 mousePosition =
-            Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10));
+        _target.transform.Translate(direction * Time.deltaTime * _moveSpeed);
+        RotateCharector(_target.transform.position);
+    }
 
-        if (mousePosition.x != transform.position.x)
-        {
-            if (mousePosition.x > transform.position.x)
-            {
-                if (transform.rotation.y != 50f)
-                {
-                    transform.DORotate(new Vector3(0, 50f, 0), 1f);
-                }
-
-                transform.position += Vector3.right * _moveSpeed * Time.deltaTime * 1.5f;
-            }
-            else if (mousePosition.x < transform.position.x)
-            {
-                if (transform.rotation.y != -50f)
-                {
-                    transform.DORotate(new Vector3(0, -50f, 0), 1f);
-                }
-
-                transform.position += Vector3.left * _moveSpeed * Time.deltaTime * 1.5f;
-            }
-        }
+    private void RotateCharector(Vector3 direction)
+    {
+        Vector3 lookDirection = direction + transform.position;
+        transform.LookAt(new Vector3(lookDirection.x, transform.position.y, lookDirection.z));
     }
 
     private void Jump()
     {
+        Rigidbody rb = GetComponent<Rigidbody>();
+        rb.AddForce(Vector3.up * 1000);
+        _onJumpTrigger = false;
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.GetComponent<JumpTrigger>())
         {
-            Debug.Log("Jump)");
             _onJumpTrigger = true;
         }
+    }
+
+    private void OnCollisionStay(Collision other)
+    {
+        _grounded?.Invoke();
+        _isGrounded = true;
+    }
+
+    private void OnCollisionExit(Collision other)
+    {
+        _jump?.Invoke();
+        _isGrounded = false;
     }
 }
