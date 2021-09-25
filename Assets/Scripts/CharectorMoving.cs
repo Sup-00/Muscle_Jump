@@ -1,8 +1,10 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using DG.Tweening;
 using UnityEngine.Events;
 
+[RequireComponent(typeof(Animator))]
 public class CharectorMoving : MonoBehaviour
 {
     [SerializeField] private float _moveSpeed;
@@ -14,10 +16,24 @@ public class CharectorMoving : MonoBehaviour
 
     private bool _onJumpTrigger = false;
     private float _lastFrameTargetPosition;
-    private bool _isGrounded = true;
+    private bool _isGrounded;
+    private Animator _animator;
+
+    private string GROUDED_TRIGGER = "Grounded";
+
+    private void Start()
+    {
+        _animator = GetComponent<Animator>();
+    }
 
     private void Update()
     {
+        if (_onJumpTrigger)
+        {
+            _jump.Invoke();
+            Jump();
+        }
+
         if (Input.GetMouseButtonDown(0))
         {
             _run?.Invoke();
@@ -30,11 +46,6 @@ public class CharectorMoving : MonoBehaviour
             transform.position = Vector3.MoveTowards(transform.position, _target.transform.position,
                 _moveSpeed * Time.deltaTime);
             _lastFrameTargetPosition = Input.mousePosition.x;
-        }
-
-        if (_onJumpTrigger && _isGrounded)
-        {
-            Jump();
         }
 
         if (Input.GetMouseButtonUp(0))
@@ -74,15 +85,29 @@ public class CharectorMoving : MonoBehaviour
         }
     }
 
-    private void OnCollisionStay(Collision other)
+    private void OnCollisionEnter(Collision other)
     {
-        _grounded?.Invoke();
-        _isGrounded = true;
+        if (other.transform.GetComponent<Enemy>())
+        {
+            Debug.Log("ignore");
+            Collider enemyCollider = other.transform.GetComponent<CapsuleCollider>();
+            Physics.IgnoreCollision(enemyCollider, transform.GetComponent<CapsuleCollider>());
+        }
+
+        if (other.transform.GetComponent<Ground>())
+        {
+            _isGrounded = true;
+            _animator.SetBool(GROUDED_TRIGGER, _isGrounded);
+            _grounded.Invoke();
+        }
     }
 
     private void OnCollisionExit(Collision other)
     {
-        _jump?.Invoke();
-        _isGrounded = false;
+        if (other.transform.GetComponent<Ground>())
+        {
+            _isGrounded = false;
+            _animator.SetBool(GROUDED_TRIGGER, _isGrounded);
+        }
     }
 }
