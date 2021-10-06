@@ -2,17 +2,22 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
+using UnityEngine.Events;
 
 public class Landing : MonoBehaviour
 {
     [SerializeField] private SphereCollider _collider;
     [SerializeField] private SpriteRenderer _spriteRenderer;
     [SerializeField] private CharectorMoving _charector;
+    [SerializeField] private ParticleSystem _particleSystem;
+    [SerializeField] private RagDallThrower _ragDallThrower;
 
     private bool _isJumped = false;
     private bool _jumped = false;
     private float _triggerTimer = 0.2f;
     private float _slowMotionTimer;
+    private bool _isPlayed = false;
 
     private void Update()
     {
@@ -28,6 +33,14 @@ public class Landing : MonoBehaviour
 
         if (_jumped == true && _isJumped == false)
         {
+            if (_isPlayed == false)
+            {
+                _ragDallThrower.Throw();
+                Camera.main.DOShakeRotation(0.5f, 2f);
+                _particleSystem.Play();
+                _isPlayed = true;
+            }
+
             _collider.enabled = true;
             _triggerTimer -= 1 * Time.deltaTime;
             _slowMotionTimer = 0.7f;
@@ -36,6 +49,7 @@ public class Landing : MonoBehaviour
             {
                 _triggerTimer = 0.2f;
                 _jumped = false;
+                _isPlayed = false;
             }
         }
         else if (_jumped == false && _isJumped == false)
@@ -68,11 +82,6 @@ public class Landing : MonoBehaviour
     {
         if (other.GetComponent<Enemy>())
             other.GetComponent<Enemy>().DestroySelf();
-    }
-
-    private IEnumerator SlowMotion()
-    {
-        yield return null;
     }
 
     public void SetTrigger(bool state)

@@ -12,7 +12,7 @@ public class Enemy : MonoBehaviour
     private CharectorMoving _charectorMoving;
     private Animator _animator;
     private Rigidbody _rigidbody;
-    private CapsuleCollider _capsuleCollider;
+
     private float _distanceDeltaZ;
     private float _distanceDeltaX;
     private string RUN_ANIMATION = "Run";
@@ -24,6 +24,7 @@ public class Enemy : MonoBehaviour
     private Collider[] _colliders;
     private Rigidbody[] _rigidbodies;
     private Vector3 _offset;
+    private bool _destroySelf = false;
 
     private void Start()
     {
@@ -34,7 +35,7 @@ public class Enemy : MonoBehaviour
         SetRigidebodies(true);
         SetColliders(true);
 
-        _capsuleCollider = GetComponent<CapsuleCollider>();
+
         _rigidbody = GetComponent<Rigidbody>();
         _animator = GetComponent<Animator>();
         _charectorMoving = FindObjectOfType<CharectorMoving>();
@@ -42,25 +43,28 @@ public class Enemy : MonoBehaviour
 
     private void Update()
     {
-        _distanceDeltaZ = transform.position.z - _charectorMoving.transform.position.z;
-        _distanceDeltaX = transform.position.x - _charectorMoving.transform.position.x;
-
-        if (transform.position.y <= -10f)
+        if (_destroySelf == false)
         {
-            Destroy(gameObject);
-        }
-
-        if (_isDead != true)
-        {
-            if (_distanceDeltaZ <= 4f && _distanceDeltaX <= 4f)
+            if (transform.position.y <= -10f)
             {
-                if (_distanceDeltaZ <= 1f && _distanceDeltaX <= 1f && _charectorMoving.IsGrounded)
-                {
-                    _animator.SetTrigger(PULL_ANIMATION);
-                    PullPlayer();
-                }
+                Destroy(gameObject);
+            }
 
-                FollowPlayer();
+            if (_isDead != true)
+            {
+                _distanceDeltaZ = transform.position.z - _charectorMoving.transform.position.z;
+                _distanceDeltaX = transform.position.x - _charectorMoving.transform.position.x;
+
+                if (_distanceDeltaZ <= 6f && _distanceDeltaX <= 6f)
+                {
+                    if (_distanceDeltaZ <= 0.5f && _distanceDeltaX <= 0.5f && _charectorMoving.IsGrounded)
+                    {
+                        _animator.SetTrigger(PULL_ANIMATION);
+                        PullPlayer();
+                    }
+
+                    FollowPlayer();
+                }
             }
         }
     }
@@ -72,21 +76,24 @@ public class Enemy : MonoBehaviour
 
     public void DestroySelf()
     {
-        _isDead = true;
-        _meshRenderer.material = _deadMaterial;
-        _animator.enabled = false;
-        Vector3 forceDirection = new Vector3(0, 3, Random.Range(-3f, 3f));
-        foreach (var rigidbody in _rigidbodies)
+        _destroySelf = true;
+        if (_isDead == false)
         {
-            rigidbody.AddForce(forceDirection * 50f);
+            _charectorMoving.NormolizeMoving();
+            _charectorMoving.RiseCharector();
+            _meshRenderer.material = _deadMaterial;
+            _animator.enabled = false;
+            transform.DOMoveY(transform.position.y + 5f, 1f);
+            SetRigidebodies(false);
+            SetColliders(false);
+            _isDead = true;
         }
-
-        SetRigidebodies(false);
     }
 
     private void PullPlayer()
     {
-        if (_distanceDeltaZ < 1f && _distanceDeltaX < 1f)
+        transform.GetComponent<CapsuleCollider>().isTrigger = false;
+        if (_distanceDeltaZ < 0.5f && _distanceDeltaX < 0.5f)
         {
             if (_isPulling == false)
             {
@@ -115,14 +122,26 @@ public class Enemy : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (other.GetComponent<JumpTrigger>())
+        {
+            Destroy(gameObject);
+        }
+
         if (other.transform.GetComponent<Ring>())
         {
             DestroySelf();
         }
+    }
 
-        if (other.GetComponent<JumpTrigger>())
+    private void OnCollisionEnter(Collision other)
+    {
+        if (other.transform.GetComponent<CharectorMoving>())
         {
-            DestroySelf();
+            foreach (var colider in _colliders)
+            {
+                Collider charectorCollider = other.transform.GetComponent<CapsuleCollider>();
+                Physics.IgnoreCollision(charectorCollider, colider);
+            }
         }
     }
 
@@ -140,5 +159,7 @@ public class Enemy : MonoBehaviour
         {
             collider.isTrigger = state;
         }
+
+        transform.GetComponent<CapsuleCollider>().isTrigger = true;
     }
 }
