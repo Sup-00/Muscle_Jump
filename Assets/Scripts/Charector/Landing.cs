@@ -1,23 +1,32 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
-using UnityEngine.Events;
 
 public class Landing : MonoBehaviour
 {
-    [SerializeField] private SphereCollider _collider;
     [SerializeField] private SpriteRenderer _spriteRenderer;
     [SerializeField] private CharectorMoving _charector;
     [SerializeField] private ParticleSystem _particleSystem;
-    [SerializeField] private RagDallThrower _ragDallThrower;
+    [SerializeField] private Animator _animator;
+    [SerializeField] private RagDallTrower _ragDallTrower;
 
+    private CameraMove _cameraMove;
+    private SphereCollider _collider;
     private bool _isJumped = false;
     private bool _jumped = false;
     private float _triggerTimer = 0.2f;
     private float _slowMotionTimer;
     private bool _isPlayed = false;
+
+    private string LANDING_TRIGGER = "Landing";
+
+    public bool IsRingActive => _spriteRenderer.enabled;
+
+    private void Start()
+    {
+        _cameraMove = FindObjectOfType<CameraMove>();
+        _collider = GetComponent<SphereCollider>();
+    }
 
     private void Update()
     {
@@ -35,18 +44,24 @@ public class Landing : MonoBehaviour
         {
             if (_isPlayed == false)
             {
-                _ragDallThrower.Throw();
-                Camera.main.DOShakeRotation(0.5f, 2f);
+                _animator.SetTrigger(LANDING_TRIGGER);
+                Camera.main.DOShakeRotation(1f, 2f);
                 _particleSystem.Play();
+                _charector.IsGrounded(true);
+                SetRagdallrowerPosition();
+                _ragDallTrower.gameObject.SetActive(true);
+                _ragDallTrower.transform.DOMoveY(transform.position.y + 1f, 0.1f);
                 _isPlayed = true;
             }
 
             _collider.enabled = true;
             _triggerTimer -= 1 * Time.deltaTime;
-            _slowMotionTimer = 0.7f;
+            _slowMotionTimer = 0.4f;
 
             if (_triggerTimer < 0)
             {
+                _ragDallTrower.gameObject.SetActive(false);
+                SetRagdallrowerPosition();
                 _triggerTimer = 0.2f;
                 _jumped = false;
                 _isPlayed = false;
@@ -78,10 +93,26 @@ public class Landing : MonoBehaviour
         }
     }
 
+    private void SetRagdallrowerPosition()
+    {
+        _ragDallTrower.transform.position =
+            new Vector3(transform.position.x, transform.position.y - 4f, transform.position.z);
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.GetComponent<Enemy>())
             other.GetComponent<Enemy>().DestroySelf();
+    }
+
+    private void OnCollisionEnter(Collision other)
+    {
+        if (other.transform.GetComponent<Enemy>() || other.transform.GetComponent<EnemyIgnore>() ||
+            other.transform.GetComponent<RagDallTrower>())
+        {
+            Collider enemyCollider = other.transform.GetComponent<Collider>();
+            Physics.IgnoreCollision(enemyCollider, transform.GetComponent<CapsuleCollider>());
+        }
     }
 
     public void SetTrigger(bool state)

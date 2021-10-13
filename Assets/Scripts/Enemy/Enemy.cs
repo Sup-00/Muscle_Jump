@@ -8,16 +8,15 @@ using Random = UnityEngine.Random;
 public class Enemy : MonoBehaviour
 {
     [SerializeField] private SkinnedMeshRenderer _meshRenderer;
+    [SerializeField] private float _moveSpeed;
 
+    private HingeJoint _hingeJoint;
+    private Landing _landing;
+    private Ring _ring;
     private CharectorMoving _charectorMoving;
+    private CharectorChangeSize _charectorChangeSize;
     private Animator _animator;
     private Rigidbody _rigidbody;
-
-    private float _distanceDeltaZ;
-    private float _distanceDeltaX;
-    private string RUN_ANIMATION = "Run";
-    private string PULL_ANIMATION = "Pull";
-    private float _moveSpeed = 1f;
     private bool _isDead = false;
     private bool _isPulling = false;
     private Material _deadMaterial;
@@ -25,10 +24,16 @@ public class Enemy : MonoBehaviour
     private Rigidbody[] _rigidbodies;
     private Vector3 _offset;
     private bool _destroySelf = false;
+    private bool _isRingActive = false;
+    private bool _isLooked = false;
+
+    private string RUN_ANIMATION = "Run";
+    private string PULL_ANIMATION = "Pull";
 
     private void Start()
     {
-        _offset = new Vector3(Random.Range(-0.9f, 0.9f), 0, Random.Range(-0.9f, 0f));
+        _hingeJoint = GetComponent<HingeJoint>();
+        _offset = new Vector3(Random.Range(-0.5f, 0.5f), 0, Random.Range(-0.5f, -0.2f));
         _colliders = GetComponentsInChildren<Collider>();
         _rigidbodies = GetComponentsInChildren<Rigidbody>();
 
@@ -38,11 +43,15 @@ public class Enemy : MonoBehaviour
 
         _rigidbody = GetComponent<Rigidbody>();
         _animator = GetComponent<Animator>();
-        _charectorMoving = FindObjectOfType<CharectorMoving>();
     }
 
     private void Update()
     {
+        if (_landing.IsRingActive == true)
+        {
+            _isRingActive = true;
+        }
+
         if (_destroySelf == false)
         {
             if (transform.position.y <= -10f)
@@ -52,59 +61,50 @@ public class Enemy : MonoBehaviour
 
             if (_isDead != true)
             {
-                _distanceDeltaZ = transform.position.z - _charectorMoving.transform.position.z;
-                _distanceDeltaX = transform.position.x - _charectorMoving.transform.position.x;
-
-                if (_distanceDeltaZ <= 6f && _distanceDeltaX <= 6f)
+                if (Vector3.Distance(_ring.transform.position, transform.position) < 7f)
                 {
-                    if (_distanceDeltaZ <= 0.5f && _distanceDeltaX <= 0.5f && _charectorMoving.IsGrounded)
+                    if (Vector3.Distance(_ring.transform.position, transform.position) < 1f &&
+                        _charectorMoving.IsGround)
                     {
+                        if (_isPulling == false)
+                        {
+                            _charectorMoving.SlowMovingSpeed();
+                            _isPulling = true;
+                        }
+
                         _animator.SetTrigger(PULL_ANIMATION);
                         PullPlayer();
                     }
-
-                    FollowPlayer();
+                    else
+                    {
+                        FollowPlayer();
+                    }
                 }
             }
         }
     }
 
-    public void Init(Material material)
-    {
-        _deadMaterial = material;
-    }
-
-    public void DestroySelf()
-    {
-        _destroySelf = true;
-        if (_isDead == false)
-        {
-            _charectorMoving.NormolizeMoving();
-            _charectorMoving.RiseCharector();
-            _meshRenderer.material = _deadMaterial;
-            _animator.enabled = false;
-            transform.DOMoveY(transform.position.y + 5f, 1f);
-            SetRigidebodies(false);
-            SetColliders(false);
-            _isDead = true;
-        }
-    }
-
     private void PullPlayer()
     {
-        transform.GetComponent<CapsuleCollider>().isTrigger = false;
-        if (_distanceDeltaZ < 0.5f && _distanceDeltaX < 0.5f)
+        if (_charectorMoving.IsGround == false)
         {
-            if (_isPulling == false)
-            {
-                _charectorMoving.SlowMoving();
-                _isPulling = true;
-            }
-
-            Vector3 target = _charectorMoving.transform.position + _offset;
-
-            transform.DOMove(target, 0.2f);
+            DestroySelf();
         }
+
+
+        /*if (_isLooked == false)
+        {
+            SetRigidebodies(true);
+            SetColliders(true);
+            transform.SetParent(_charectorMoving.transform);
+            _isLooked = true;
+        }
+
+        _hingeJoint.connectedBody = _charectorMoving.GetComponent<Rigidbody>();*/
+
+
+        Vector3 target = _charectorMoving.transform.position + _offset;
+        transform.position = target;
 
         transform.LookAt(_charectorMoving.transform);
     }
@@ -116,7 +116,6 @@ public class Enemy : MonoBehaviour
         Vector3 target = new Vector3(_charectorMoving.transform.position.x, transform.position.y,
             _charectorMoving.transform.position.z);
         transform.LookAt(target);
-
         transform.Translate(Vector3.forward * Time.deltaTime * _moveSpeed);
     }
 
@@ -124,10 +123,10 @@ public class Enemy : MonoBehaviour
     {
         if (other.GetComponent<JumpTrigger>())
         {
-            Destroy(gameObject);
+            DestroySelf();
         }
 
-        if (other.transform.GetComponent<Ring>())
+        if (other.GetComponent<Ring>())
         {
             DestroySelf();
         }
@@ -149,7 +148,8 @@ public class Enemy : MonoBehaviour
     {
         foreach (var rigidbodie in _rigidbodies)
         {
-            rigidbodie.isKinematic = state;
+            if (rigidbodie != null)
+                rigidbodie.isKinematic = state;
         }
     }
 
@@ -157,9 +157,40 @@ public class Enemy : MonoBehaviour
     {
         foreach (var collider in _colliders)
         {
-            collider.isTrigger = state;
+            if (collider != null)
+                collider.isTrigger = state;
         }
 
         transform.GetComponent<CapsuleCollider>().isTrigger = true;
+    }
+
+    public void Init(Material material, CharectorChangeSize charectorChangeSize, CharectorMoving charectorMoving,
+        Ring ring, Landing landing)
+    {
+        _landing = landing;
+        _ring = ring;
+        _charectorMoving = charectorMoving;
+        _charectorChangeSize = charectorChangeSize;
+        _deadMaterial = material;
+    }
+
+    public void DestroySelf()
+    {
+        _destroySelf = true;
+        if (_isDead == false)
+        {
+            transform.SetParent(null);
+            Destroy(_hingeJoint);
+            _charectorMoving.NormolizeMovingSpeed();
+            _charectorChangeSize.RiseCharector();
+            _meshRenderer.material = _deadMaterial;
+            _animator.enabled = false;
+            transform.DOMoveY(transform.position.y + 5f, 2f);
+            SetRigidebodies(false);
+            SetColliders(false);
+            Destroy(_colliders[0]);
+            Destroy(_rigidbodies[0]);
+            _isDead = true;
+        }
     }
 }

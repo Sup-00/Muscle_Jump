@@ -4,43 +4,35 @@ using UnityEngine.Events;
 [RequireComponent(typeof(Animator))]
 public class CharectorMoving : MonoBehaviour
 {
-    [SerializeField] private float _moveSpeed;
+    [SerializeField] private float _startMovingSpeed;
     [SerializeField] private GameObject _target;
-    [SerializeField] private UnityEvent _run;
-    [SerializeField] private UnityEvent _jump;
-    [SerializeField] private UnityEvent _grounded;
-    [SerializeField] private UnityEvent _idle;
 
-    private bool _onJumpTrigger = false;
+    private Landing _landing;
+    private CameraMove _cameraMove;
+    private Animator _animator;
     private float _lastFrameTargetPosition;
     private bool _isGrounded;
-    private Animator _animator;
-    private float _startMoveSpeed;
-    private Vector3 _scaleChangeValue;
-    private Ring _ring;
+    private float _currentMovingSpeed;
 
-    private string GROUDED_TRIGGER = "Grounded";
+    private string RUN_TRIGGET = "Run";
+    private string IDLE_TRIGGET = "Idle";
 
-    public bool IsGrounded => _isGrounded;
+    public bool IsGround => _isGrounded;
 
     private void Start()
     {
-        _ring = GetComponentInChildren<Ring>();
-        _scaleChangeValue = new Vector3(0.02f, 0.02f, 0.02f);
-        _startMoveSpeed = _moveSpeed;
+        _landing = GetComponentInChildren<Landing>();
+        _cameraMove = FindObjectOfType<CameraMove>();
         _animator = GetComponent<Animator>();
+        _currentMovingSpeed = _startMovingSpeed;
     }
 
     private void Update()
     {
-        if (_onJumpTrigger)
-        {
-            Jump();
-        }
-
         if (Input.GetMouseButtonDown(0))
         {
-            _run.Invoke();
+            _animator.SetBool(IDLE_TRIGGET, false);
+            _animator.SetBool(RUN_TRIGGET, true);
             _lastFrameTargetPosition = Input.mousePosition.x;
         }
 
@@ -48,13 +40,14 @@ public class CharectorMoving : MonoBehaviour
         {
             MoveTargetPoint(_lastFrameTargetPosition);
             transform.position = Vector3.MoveTowards(transform.position, _target.transform.position,
-                _moveSpeed * Time.deltaTime);
+                _currentMovingSpeed * Time.deltaTime);
             _lastFrameTargetPosition = Input.mousePosition.x;
         }
 
         if (Input.GetMouseButtonUp(0))
         {
-            _idle.Invoke();
+            _animator.SetBool(RUN_TRIGGET, false);
+            _animator.SetBool(IDLE_TRIGGET, true);
             _lastFrameTargetPosition = 0f;
         }
     }
@@ -64,7 +57,7 @@ public class CharectorMoving : MonoBehaviour
         float targetPosition = Input.mousePosition.x - lastPosition;
         Vector3 direction = new Vector3(targetPosition, 0, 1);
 
-        _target.transform.Translate(direction * Time.deltaTime * _moveSpeed);
+        _target.transform.Translate(direction * Time.deltaTime * _currentMovingSpeed);
         _target.transform.position =
             new Vector3(_target.transform.position.x, transform.position.y, transform.position.z + 3f);
         RotateCharector(_target.transform.position);
@@ -76,27 +69,9 @@ public class CharectorMoving : MonoBehaviour
         transform.LookAt(new Vector3(lookDirection.x, transform.position.y, lookDirection.z));
     }
 
-    private void Jump()
-    {
-        _moveSpeed = _startMoveSpeed;
-        _animator.speed = 1f;
-        Rigidbody rb = GetComponent<Rigidbody>();
-        rb.AddForce(Vector3.up * 1000);
-        _onJumpTrigger = false;
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.GetComponent<JumpTrigger>())
-        {
-            _jump.Invoke();
-            _onJumpTrigger = true;
-        }
-    }
-
     private void OnCollisionEnter(Collision other)
     {
-        if (other.transform.GetComponent<Enemy>() || other.transform.GetComponent<EnemyIgnore>())
+        if (other.transform.GetComponent<Enemy>() || other.transform.GetComponent<EnemyIgnore>() || other.transform.GetComponent<RagDallTrower>())
         {
             Collider enemyCollider = other.transform.GetComponent<Collider>();
             Physics.IgnoreCollision(enemyCollider, transform.GetComponent<CapsuleCollider>());
@@ -104,50 +79,43 @@ public class CharectorMoving : MonoBehaviour
 
         if (other.transform.GetComponent<Ground>())
         {
-            _grounded.Invoke();
-            _isGrounded = true;
-            _animator.SetBool(GROUDED_TRIGGER, _isGrounded);
+            _landing.SetTrigger(false);
         }
     }
 
-    private void OnCollisionExit(Collision other)
-    {
-        if (other.transform.GetComponent<Ground>())
-        {
-            _isGrounded = false;
-            _animator.SetBool(GROUDED_TRIGGER, _isGrounded);
-        }
-    }
-
-    public void SlowMoving()
+    public void SlowMovingSpeed()
     {
         float slowingForce = 0.4f;
-        _moveSpeed -= slowingForce;
+        _currentMovingSpeed -= slowingForce;
 
         if (_animator.speed > 0.2f)
         {
-            _animator.speed = _moveSpeed / _startMoveSpeed;
+            _animator.speed = _currentMovingSpeed / _startMovingSpeed;
         }
     }
 
-    public void NormolizeMoving()
+    public void NormolizeMovingSpeed()
     {
-        if (_moveSpeed < _startMoveSpeed)
+        if (_currentMovingSpeed < _startMovingSpeed)
         {
             float slowingForce = 0.4f;
-            _moveSpeed += slowingForce;
-            _animator.speed = _moveSpeed / _startMoveSpeed;
+            _currentMovingSpeed += slowingForce;
+            _animator.speed = _currentMovingSpeed / _startMovingSpeed;
         }
         else
         {
-            _moveSpeed = _startMoveSpeed;
+            _currentMovingSpeed = _startMovingSpeed;
             _animator.speed = 1f;
         }
     }
 
-    public void RiseCharector()
+    public void SetStartMovingSpeed()
     {
-        transform.localScale += _scaleChangeValue;
-        _ring.transform.localPosition += _scaleChangeValue;
+        _currentMovingSpeed = _startMovingSpeed;
+    }
+
+    public void IsGrounded(bool state)
+    {
+        _isGrounded = state;
     }
 }
