@@ -106,11 +106,6 @@ public class Enemy : MonoBehaviour
             AddConnectionPoints();
             _isLooked = true;
         }
-
-        /*Vector3 target = _charectorMoving.transform.position + _offset;
-        transform.position = target;
-
-        transform.LookAt(_charectorMoving.transform);*/
     }
 
     private void AddConnectionPoints()
@@ -148,10 +143,28 @@ public class Enemy : MonoBehaviour
 
     private void OnCollisionEnter(Collision other)
     {
-        if (other.transform.GetComponent<Enemy>())
+        if (other.transform.GetComponent<Enemy>() || other.transform.GetComponent<EnemyIgnore>())
         {
-            Collider charectorCollider = other.transform.GetComponent<CapsuleCollider>();
-            Physics.IgnoreCollision(charectorCollider, transform.GetComponent<CapsuleCollider>());
+            if (other.transform.GetComponent<EnemyIgnore>() && other.transform.GetComponent<CapsuleCollider>())
+            {
+                Collider enemyCollider = other.transform.GetComponent<CapsuleCollider>();
+                Physics.IgnoreCollision(enemyCollider, transform.GetComponent<CapsuleCollider>());
+            }
+            else if (other.transform.GetComponent<EnemyIgnore>() && other.transform.GetComponent<BoxCollider>())
+            {
+                Collider enemyCollider = other.transform.GetComponent<BoxCollider>();
+                Physics.IgnoreCollision(enemyCollider, transform.GetComponent<CapsuleCollider>());
+            }
+            else if (other.transform.GetComponent<EnemyIgnore>() && other.transform.GetComponent<SphereCollider>())
+            {
+                Collider enemyCollider = other.transform.GetComponent<SphereCollider>();
+                Physics.IgnoreCollision(enemyCollider, transform.GetComponent<CapsuleCollider>());
+            }
+            else
+            {
+                Collider enemyCollider = other.transform.GetComponent<CapsuleCollider>();
+                Physics.IgnoreCollision(enemyCollider, transform.GetComponent<CapsuleCollider>());
+            }
         }
 
         if (other.transform.GetComponent<CharectorMoving>() || other.transform.GetComponent<Ground>())
@@ -204,6 +217,7 @@ public class Enemy : MonoBehaviour
             foreach (var point in points)
             {
                 _charectorMoving.DeliteConnectionPoint(point);
+                Destroy(point.gameObject);
             }
 
             transform.SetParent(null);
