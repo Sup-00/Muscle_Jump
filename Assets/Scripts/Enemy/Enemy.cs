@@ -63,7 +63,7 @@ public class Enemy : MonoBehaviour
             {
                 if (Vector3.Distance(_ring.transform.position, transform.position) < 7f)
                 {
-                    if (Vector3.Distance(_ring.transform.position, transform.position) < 2f &&
+                    if (Vector3.Distance(_ring.transform.position, transform.position) < 0.3f &&
                         _charectorMoving.IsGround)
                     {
                         if (_isPulling == false)
