@@ -169,7 +169,9 @@ public class CharectorMoving : MonoBehaviour
             for (int i = 0; i < _connectionPoints.Count; i++)
             {
                 if (_connectionPoints[i].GetComponent<Enemy>())
+                {
                     _connectionPoints[i].GetComponent<Enemy>().DestroySelf();
+                }
             }
         }
 

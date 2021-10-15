@@ -5,8 +5,9 @@ using UnityEngine;
 public class CharectorChangeSize : MonoBehaviour
 {
     [SerializeField] private GameObject[] _risingParts;
-    [SerializeField] private float _rizePartSize;
-    [SerializeField] private float _rizeSize;
+    [SerializeField] private float _risePartSize;
+    [SerializeField] private float _riseSize;
+    [SerializeField] private float _rizeRingSize;
 
     private Ring _ring;
 
@@ -21,14 +22,14 @@ public class CharectorChangeSize : MonoBehaviour
 
     public void RiseCharector()
     {
-        transform.localScale += new Vector3(_rizeSize, _rizeSize, _rizeSize);
-        _ring.transform.localScale += new Vector3(_rizeSize, _rizeSize, _rizeSize);
+        transform.localScale += new Vector3(_riseSize, _riseSize, _riseSize);
+        _ring.transform.localScale += new Vector3(_rizeRingSize, _rizeRingSize, _rizeRingSize);
 
         if (_risingParts[0].transform.localScale.x < 1f)
         {
             foreach (var part in _risingParts)
             {
-                part.transform.localScale += new Vector3(_rizePartSize, _rizePartSize, _rizePartSize);
+                part.transform.localScale += new Vector3(_risePartSize, _risePartSize, _risePartSize);
             }
         }
     }
