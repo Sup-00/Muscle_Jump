@@ -5,6 +5,7 @@ public class EnemySpawner : MonoBehaviour
 {
     [SerializeField] private Material _deadMaterial;
     [SerializeField] private Enemy _enemyPrefab;
+    [SerializeField] private GameObject _connectionPointsPrefab;
 
     private Landing _landing;
     private CharectorChangeSize _charectorChangeSize;
@@ -25,7 +26,8 @@ public class EnemySpawner : MonoBehaviour
         for (int i = 0; i < _spawnPoints.Length; i++)
         {
             _enemies.Add(Instantiate(_enemyPrefab, _spawnPoints[i].transform));
-            _enemies[i].Init(_deadMaterial, _charectorChangeSize, _charectorMoving, _ring, _landing);
+            _enemies[i].Init(_deadMaterial, _charectorChangeSize, _charectorMoving, _ring, _landing,
+                _connectionPointsPrefab);
         }
     }
 }

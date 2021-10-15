@@ -51,6 +51,7 @@ public class CharectorJump : MonoBehaviour
 
     private void Jump()
     {
+        _charectorMoving.ResetConnectionPoints();
         _animator.SetBool(JUMP_TRIGGET, true);
         _charectorMoving.SetStartMovingSpeed();
         _animator.speed = 1f;

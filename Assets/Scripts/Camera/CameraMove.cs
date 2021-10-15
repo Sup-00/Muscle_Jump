@@ -7,11 +7,14 @@ using UnityEngine;
 public class CameraMove : MonoBehaviour
 {
     [SerializeField] private CharectorMoving _player;
+    
 
     private void Update()
     {
-        transform.position = new Vector3(_player.transform.position.x, _player.transform.position.y + 8.5f,
-            _player.transform.position.z - 10f);
+
+        transform.position = new Vector3(_player.transform.position.x, _player.transform.position.y + 6f,
+            _player.transform.position.z - 7.8f);
+        transform.LookAt(_player.transform);
     }
 
     public void OnJump()
@@ -21,6 +24,5 @@ public class CameraMove : MonoBehaviour
 
     public void OnLanding()
     {
-        transform.DORotate(new Vector3(25f, 0f, 0f), 0.2f);
     }
 }

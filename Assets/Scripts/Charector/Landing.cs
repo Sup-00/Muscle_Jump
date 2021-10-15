@@ -45,7 +45,7 @@ public class Landing : MonoBehaviour
             if (_isPlayed == false)
             {
                 _animator.SetTrigger(LANDING_TRIGGER);
-                Camera.main.DOShakeRotation(1f, 2f);
+                Camera.main.DOShakeRotation(0.3f, 8f);
                 _particleSystem.Play();
                 _charector.IsGrounded(true);
                 SetRagdallrowerPosition();
@@ -56,7 +56,7 @@ public class Landing : MonoBehaviour
 
             _collider.enabled = true;
             _triggerTimer -= 1 * Time.deltaTime;
-            _slowMotionTimer = 0.4f;
+            _slowMotionTimer = 0.3f;
 
             if (_triggerTimer < 0)
             {

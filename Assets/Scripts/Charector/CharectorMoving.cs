@@ -1,5 +1,5 @@
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
 
 [RequireComponent(typeof(Animator))]
 public class CharectorMoving : MonoBehaviour
@@ -13,6 +13,7 @@ public class CharectorMoving : MonoBehaviour
     private float _lastFrameTargetPosition;
     private bool _isGrounded;
     private float _currentMovingSpeed;
+    private List<ConnectionPoint> _connectionPoints;
 
     private string RUN_TRIGGET = "Run";
     private string IDLE_TRIGGET = "Idle";
@@ -21,6 +22,7 @@ public class CharectorMoving : MonoBehaviour
 
     private void Start()
     {
+        ResetConnectionPoints();
         _landing = GetComponentInChildren<Landing>();
         _cameraMove = FindObjectOfType<CameraMove>();
         _animator = GetComponent<Animator>();
@@ -71,11 +73,36 @@ public class CharectorMoving : MonoBehaviour
 
     private void OnCollisionEnter(Collision other)
     {
-        if (other.transform.GetComponent<Enemy>() || other.transform.GetComponent<EnemyIgnore>() || other.transform.GetComponent<RagDallTrower>())
+        if (other.transform.GetComponent<Enemy>() || other.transform.GetComponent<EnemyIgnore>())
         {
-            Collider enemyCollider = other.transform.GetComponent<Collider>();
+            if (other.transform.GetComponent<EnemyIgnore>() && other.transform.GetComponent<CapsuleCollider>())
+            {
+                Collider enemyCollider = other.transform.GetComponent<CapsuleCollider>();
+                Physics.IgnoreCollision(enemyCollider, transform.GetComponent<CapsuleCollider>());
+            }
+            else if (other.transform.GetComponent<EnemyIgnore>() && other.transform.GetComponent<BoxCollider>())
+            {
+                Collider enemyCollider = other.transform.GetComponent<BoxCollider>();
+                Physics.IgnoreCollision(enemyCollider, transform.GetComponent<CapsuleCollider>());
+            }
+            else if (other.transform.GetComponent<EnemyIgnore>() && other.transform.GetComponent<SphereCollider>())
+            {
+                Collider enemyCollider = other.transform.GetComponent<SphereCollider>();
+                Physics.IgnoreCollision(enemyCollider, transform.GetComponent<CapsuleCollider>());
+            }
+            else
+            {
+                Collider enemyCollider = other.transform.GetComponent<CapsuleCollider>();
+                Physics.IgnoreCollision(enemyCollider, transform.GetComponent<CapsuleCollider>());
+            }
+        }
+
+        if (other.transform.GetComponent<RagDallTrower>())
+        {
+            Collider enemyCollider = other.transform.GetComponent<SphereCollider>();
             Physics.IgnoreCollision(enemyCollider, transform.GetComponent<CapsuleCollider>());
         }
+
 
         if (other.transform.GetComponent<Ground>())
         {
@@ -117,5 +144,41 @@ public class CharectorMoving : MonoBehaviour
     public void IsGrounded(bool state)
     {
         _isGrounded = state;
+    }
+
+    public void AddConnectionPoint(ConnectionPoint point)
+    {
+        _connectionPoints.Add(point);
+    }
+
+    public ConnectionPoint GetConnectionPoint()
+    {
+        return (_connectionPoints[Random.Range(0, _connectionPoints.Count)]);
+    }
+
+    public void DeliteConnectionPoint(ConnectionPoint connectionPoint)
+    {
+        _connectionPoints.Remove(connectionPoint);
+        Destroy(connectionPoint);
+    }
+
+    public void ResetConnectionPoints()
+    {
+        if (_connectionPoints != null)
+        {
+            for (int i = 0; i < _connectionPoints.Count; i++)
+            {
+                if (_connectionPoints[i].GetComponent<Enemy>())
+                    _connectionPoints[i].GetComponent<Enemy>().DestroySelf();
+            }
+        }
+
+        _connectionPoints = new List<ConnectionPoint>();
+
+        ConnectionPoint[] points = transform.GetComponentsInChildren<ConnectionPoint>();
+        foreach (var point in points)
+        {
+            _connectionPoints.Add(point);
+        }
     }
 }

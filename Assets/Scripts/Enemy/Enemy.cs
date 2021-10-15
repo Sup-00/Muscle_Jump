@@ -10,6 +10,7 @@ public class Enemy : MonoBehaviour
     [SerializeField] private SkinnedMeshRenderer _meshRenderer;
     [SerializeField] private float _moveSpeed;
 
+    private GameObject _connectionPointsPrefab;
     private HingeJoint _hingeJoint;
     private Landing _landing;
     private Ring _ring;
@@ -32,7 +33,6 @@ public class Enemy : MonoBehaviour
 
     private void Start()
     {
-        _hingeJoint = GetComponent<HingeJoint>();
         _offset = new Vector3(Random.Range(-0.5f, 0.5f), 0, Random.Range(-0.5f, -0.2f));
         _colliders = GetComponentsInChildren<Collider>();
         _rigidbodies = GetComponentsInChildren<Rigidbody>();
@@ -63,7 +63,7 @@ public class Enemy : MonoBehaviour
             {
                 if (Vector3.Distance(_ring.transform.position, transform.position) < 7f)
                 {
-                    if (Vector3.Distance(_ring.transform.position, transform.position) < 1f &&
+                    if (Vector3.Distance(_ring.transform.position, transform.position) < 2f &&
                         _charectorMoving.IsGround)
                     {
                         if (_isPulling == false)
@@ -92,21 +92,35 @@ public class Enemy : MonoBehaviour
         }
 
 
-        /*if (_isLooked == false)
+        if (_isLooked == false)
         {
-            SetRigidebodies(true);
-            SetColliders(true);
-            transform.SetParent(_charectorMoving.transform);
+            ConnectionPoint point = _charectorMoving.GetConnectionPoint();
+            _hingeJoint = gameObject.AddComponent<HingeJoint>();
+            _rigidbodies[0].isKinematic = false;
+            _colliders[0].isTrigger = false;
+            _hingeJoint.autoConfigureConnectedAnchor = false;
+            _hingeJoint.connectedAnchor = new Vector3(0f, 0.15f, -0.25f);
+            _hingeJoint.anchor = new Vector3(0f, 2f, 0.96f);
+            _hingeJoint.axis = new Vector3(0f, 1f, 0f);
+            _hingeJoint.connectedBody = point.GetComponent<Rigidbody>();
+            AddConnectionPoints();
             _isLooked = true;
         }
 
-        _hingeJoint.connectedBody = _charectorMoving.GetComponent<Rigidbody>();*/
-
-
-        Vector3 target = _charectorMoving.transform.position + _offset;
+        /*Vector3 target = _charectorMoving.transform.position + _offset;
         transform.position = target;
 
-        transform.LookAt(_charectorMoving.transform);
+        transform.LookAt(_charectorMoving.transform);*/
+    }
+
+    private void AddConnectionPoints()
+    {
+        Instantiate(_connectionPointsPrefab, transform);
+        ConnectionPoint[] connectionPoint = transform.GetComponentsInChildren<ConnectionPoint>();
+        foreach (var point in connectionPoint)
+        {
+            _charectorMoving.AddConnectionPoint(point);
+        }
     }
 
     private void FollowPlayer()
@@ -134,11 +148,17 @@ public class Enemy : MonoBehaviour
 
     private void OnCollisionEnter(Collision other)
     {
-        if (other.transform.GetComponent<CharectorMoving>())
+        if (other.transform.GetComponent<Enemy>())
+        {
+            Collider charectorCollider = other.transform.GetComponent<CapsuleCollider>();
+            Physics.IgnoreCollision(charectorCollider, transform.GetComponent<CapsuleCollider>());
+        }
+
+        if (other.transform.GetComponent<CharectorMoving>() || other.transform.GetComponent<Ground>())
         {
             foreach (var colider in _colliders)
             {
-                Collider charectorCollider = other.transform.GetComponent<CapsuleCollider>();
+                Collider charectorCollider = other.transform.GetComponent<Collider>();
                 Physics.IgnoreCollision(charectorCollider, colider);
             }
         }
@@ -165,8 +185,9 @@ public class Enemy : MonoBehaviour
     }
 
     public void Init(Material material, CharectorChangeSize charectorChangeSize, CharectorMoving charectorMoving,
-        Ring ring, Landing landing)
+        Ring ring, Landing landing, GameObject connectionPointsPrefab)
     {
+        _connectionPointsPrefab = connectionPointsPrefab;
         _landing = landing;
         _ring = ring;
         _charectorMoving = charectorMoving;
@@ -179,6 +200,12 @@ public class Enemy : MonoBehaviour
         _destroySelf = true;
         if (_isDead == false)
         {
+            ConnectionPoint[] points = transform.GetComponentsInChildren<ConnectionPoint>();
+            foreach (var point in points)
+            {
+                _charectorMoving.DeliteConnectionPoint(point);
+            }
+
             transform.SetParent(null);
             Destroy(_hingeJoint);
             _charectorMoving.NormolizeMovingSpeed();
