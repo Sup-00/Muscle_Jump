@@ -1,5 +1,5 @@
 # Muscle_Jump
-[Image alt](https://github.com/Sup-00/Pictures/blob/main/MuscleJump.png)
+(https://github.com/Sup-00/Pictures/blob/main/MuscleJump.png)
 
 Видео: https://www.youtube.com/watch?v=_PTG9Bwk6-4
 
