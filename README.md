@@ -1,5 +1,5 @@
 # Muscle_Jump
-[Image alt](https://github.com/{username}/{repository}/raw/{branch}/{path}/image.png)
+[Image alt](https://github.com/{Sup-00}/{Pictures}/raw/{main}/MuscleJump.png)
 
 Видео: https://www.youtube.com/watch?v=_PTG9Bwk6-4
 
