@@ -3,4 +3,4 @@
 
 [Видео](https://www.youtube.com/watch?v=_PTG9Bwk6-4)
 
-![Image alt](https://github.com/Sup-00/Pictures/blob/main/MuscleJump.png)
+![Image alt](https://github.com/Sup-00/Muscle_Jump/blob/main/MuscleJump.png)
